@@ -75,3 +75,30 @@ These parameters allow you to set profit and loss limits to protect your capital
 - **Daily Max Loss ($)**: Maximum loss allowed for the trading day. Once reached, the strategy stops trading.
 - **Total Profit Target ($)**: Overall profit goal for the strategy session. Once reached, no further trades will be placed.
 - **Total Max Loss ($)**: Maximum allowable loss for the strategy session. Once reached, the strategy halts trading.
+
+## Installation Instructions
+
+You can install the AutoNQ strategy by either importing the ZIP file or manually adding the `.cs` file to NinjaTrader.
+
+### Option 1: Installing from the ZIP File
+
+1. **Download the ZIP File**:
+   - Download the `LDQ_AutoNQ_NT8.zip` file from the repository or the provided link.
+
+2. **Open NinjaTrader**:
+   - Launch **NinjaTrader** and navigate to the **Control Center** window.
+
+3. **Import the Strategy**:
+   - In the Control Center, go to the menu bar and select **Tools** > **Import** > **NinjaScript Add-On**.
+   - Select the downloaded `LDQ_AutoNQ_NT8.zip` file.
+   - NinjaTrader will automatically import the strategy.
+
+### Option 2: Installing from the .cs File
+
+1. **Download the .cs File**:
+   - Download the `AutoNQ.cs` file.
+     
+2. **Add the .cs File**:
+   - Navigate to `NinjaTrader 8\bin\Custom\Strategies`
+   - Add the `AutoNQ.cs` file to the folder.
+
