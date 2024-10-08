@@ -7,7 +7,7 @@ Renko bars are a type of price chart used in technical analysis that focus solel
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/32b49902-0f19-4058-9a54-85cc5ba571bb" alt="5 Minute Chart" width="49%"/>
-  <img src="https://github.com/user-attachments/assets/e6737158-0f3e-429b-a71e-a83625d02320" alt="200/5 Renko Chart" width="49%/>
+  <img src="https://github.com/user-attachments/assets/e6737158-0f3e-429b-a71e-a83625d02320" alt="200/5 Renko Chart" width="49%"/>
 </p>
 
 The overall trend is MUCH easier to spot with these large Renko bars.
