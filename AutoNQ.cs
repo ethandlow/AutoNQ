@@ -28,12 +28,6 @@ using NinjaTrader.NinjaScript.DrawingTools;
 //This namespace holds Strategies in this folder and is required. Do not change it. 
 namespace NinjaTrader.NinjaScript.Strategies
 {
-	
-	[Gui.CategoryOrder("Time", 1)]
-	[Gui.CategoryOrder("Trade Management", 2)]
-	[Gui.CategoryOrder("News", 3)]
-	[Gui.CategoryOrder("Risk Management", 4)]
-
 	#region Economic News Class
 	
 	public class EconomicNews
@@ -110,6 +104,11 @@ namespace NinjaTrader.NinjaScript.Strategies
 	}
 
 	#endregion
+	
+	[Gui.CategoryOrder("Time", 1)]
+	[Gui.CategoryOrder("Trade Management", 2)]
+	[Gui.CategoryOrder("News", 3)]
+	[Gui.CategoryOrder("Risk Management", 4)]
 	
 	public class AutoNQ : Strategy
 	{
@@ -214,8 +213,8 @@ namespace NinjaTrader.NinjaScript.Strategies
 				DailyMaxLoss								= 0;
 				MaxLoss										= 0;
 				AvoidHighImpact								= true;
-				HighMinutesBefore							= 5;
-				HighMinutesAfter							= 5;
+				AvoidMediumImpact							= false;
+				AvoidLowImpact								= false;
 			}
 			else if (State == State.Configure)
 			{
@@ -372,11 +371,27 @@ namespace NinjaTrader.NinjaScript.Strategies
 			
 			foreach (EconomicNews n in news)
 			{				
-				if (AvoidHighImpact && checkTime(n.Date.AddMinutes(HighMinutesBefore * -1), n.Date.AddMinutes(HighMinutesAfter)))
+				if (AvoidHighImpact && n.Impact == "High" && checkTime(n.Date.AddMinutes(HighMinutesBefore * -1), n.Date.AddMinutes(HighMinutesAfter)))
 				{
 					tradeWindow = false;
 					Draw.TextFixed(this, "Econ", 
 						$"Avoiding {n.EventName} from {n.Date.AddMinutes(HighMinutesBefore * -1).ToShortTimeString()} to {n.Date.AddMinutes(HighMinutesAfter).ToShortTimeString()}", 
+						TextPosition.BottomRight, Brushes.Red, text, Brushes.Red, Brushes.Black, 50);
+				}
+				
+				else if (AvoidMediumImpact && n.Impact == "Medium" && checkTime(n.Date.AddMinutes(MediumMinutesBefore * -1), n.Date.AddMinutes(MediumMinutesAfter)))
+				{
+					tradeWindow = false;
+					Draw.TextFixed(this, "Econ", 
+						$"Avoiding {n.EventName} from {n.Date.AddMinutes(MediumMinutesBefore * -1).ToShortTimeString()} to {n.Date.AddMinutes(MediumMinutesAfter).ToShortTimeString()}", 
+						TextPosition.BottomRight, Brushes.Red, text, Brushes.Red, Brushes.Black, 50);
+				}
+				
+				else if (AvoidLowImpact && n.Impact == "Medium" && checkTime(n.Date.AddMinutes(LowMinutesBefore * -1), n.Date.AddMinutes(LowMinutesAfter)))
+				{
+					tradeWindow = false;
+					Draw.TextFixed(this, "Econ", 
+						$"Avoiding {n.EventName} from {n.Date.AddMinutes(LowMinutesBefore * -1).ToShortTimeString()} to {n.Date.AddMinutes(LowMinutesAfter).ToShortTimeString()}", 
 						TextPosition.BottomRight, Brushes.Red, text, Brushes.Red, Brushes.Black, 50);
 				}
 				
@@ -730,13 +745,13 @@ namespace NinjaTrader.NinjaScript.Strategies
 		{ get; set; }
 		
 		[NinjaScriptProperty]
-		[Range(1, Int32.MaxValue)]
+		[Range(0, Int32.MaxValue)]
 		[Display(Name="Minutes Before", Order=2, GroupName="News")]
 		public int HighMinutesBefore
 		{ get; set; }
 		
 		[NinjaScriptProperty]
-		[Range(1, Int32.MaxValue)]
+		[Range(0, Int32.MaxValue)]
 		[Display(Name="Minutes After", Order=3, GroupName="News")]
 		public int HighMinutesAfter
 		{ get; set; }
@@ -747,8 +762,32 @@ namespace NinjaTrader.NinjaScript.Strategies
 		{ get; set; }
 		
 		[NinjaScriptProperty]
+		[Range(0, Int32.MaxValue)]
+		[Display(Name="Minutes Before", Order=5, GroupName="News")]
+		public int MediumMinutesBefore
+		{ get; set; }
+		
+		[NinjaScriptProperty]
+		[Range(0, Int32.MaxValue)]
+		[Display(Name="Minutes After", Order=6, GroupName="News")]
+		public int MediumMinutesAfter
+		{ get; set; }
+		
+		[NinjaScriptProperty]
 		[Display(Name="Avoid Low Impact News", Order=7, GroupName="News")]
 		public bool AvoidLowImpact
+		{ get; set; }
+		
+		[NinjaScriptProperty]
+		[Range(0, Int32.MaxValue)]
+		[Display(Name="Minutes Before", Order=8, GroupName="News")]
+		public int LowMinutesBefore
+		{ get; set; }
+		
+		[NinjaScriptProperty]
+		[Range(0, Int32.MaxValue)]
+		[Display(Name="Minutes After", Order=9, GroupName="News")]
+		public int LowMinutesAfter
 		{ get; set; }
 		
 		[NinjaScriptProperty]
