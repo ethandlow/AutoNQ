@@ -105,6 +105,18 @@ namespace NinjaTrader.NinjaScript.Strategies
 
 	#endregion
 	
+	#region Trade Data Class
+	
+	public class TradeData
+	{
+	    public double Volume { get; set; }
+	    public double TimeToFormBar { get; set; }
+		public double Price { get; set; }
+	    public bool IsProfitable { get; set; } // Label: 1 for profitable, 0 for not profitable
+	}
+	
+	#endregion
+	
 	[Gui.CategoryOrder("Time", 1)]
 	[Gui.CategoryOrder("Trade Management", 2)]
 	[Gui.CategoryOrder("News", 3)]
@@ -158,6 +170,13 @@ namespace NinjaTrader.NinjaScript.Strategies
 			#region Econ News
 		
 			private List<EconomicNews> news;
+		
+			#endregion
+		
+			#region KNN
+		
+			private List<TradeData> tradeDataSet;
+			private List<TradeData> openTrades;
 		
 			#endregion
 		
@@ -735,7 +754,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 		
 		[NinjaScriptProperty]
 		[Range(0, Int32.MaxValue)]
-		[Display(Name="VolumeThreshold", Order=9, GroupName="Trade Management")]
+		[Display(Name="Volume Threshold", Order=9, GroupName="Trade Management")]
 		public int VolumeThreshold
 		{ get; set; }
 		
