@@ -10,6 +10,11 @@ Renko bars are a type of price chart used in technical analysis that focus solel
   <img src="https://github.com/user-attachments/assets/e6737158-0f3e-429b-a71e-a83625d02320" alt="200/5 Renko Chart" width="49%"/>
 </p>
 
-The overall trend is MUCH easier to spot with these large Renko bars.
+The overall trend is MUCH easier to spot on the 200/5 Renko chart (right) as opposed to the 5-minute chart (left).
 
 One downside of traditional Renko bars is that the highs and lows are artificially filled, so you miss out on crucial information hidden inside of the bars. To combat this, I've designed my own RealRenko bars that have the true open, high, low, and close information right on the chart to provide a more comprehensive view of the markets.
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/520f39a7-9476-4cd7-8d72-56dc2f866f27" alt="Traditional Renko" width="49%"/>
+  <img src="https://github.com/user-attachments/assets/253a6b95-d5b9-4438-a7e1-8ee3f3a74547" alt="Real Renko" width="49%"/>
+</p>
