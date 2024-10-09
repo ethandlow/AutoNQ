@@ -38,7 +38,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 	
 	    public override string ToString()
 	    {
-	        return $"{EventName},{Date.ToString()},{Impact}";
+	        return $"{EventName},{Date},{Impact}";
 	    }
 	}
 	
@@ -109,10 +109,18 @@ namespace NinjaTrader.NinjaScript.Strategies
 	
 	public class TradeData
 	{
-	    public double Volume { get; set; }
+	    public int Index { get; set; }
+		public double Volume { get; set; }
 	    public double TimeToFormBar { get; set; }
+		public double BarSize { get; set; }
 		public double Price { get; set; }
+		public int Direction { get; set; }
 	    public bool IsProfitable { get; set; } // Label: 1 for profitable, 0 for not profitable
+		
+		public override string ToString()
+		{
+			return $"Bar {Index}: Volume {Volume} Time {TimeToFormBar} Size {BarSize} Open {Price} Direction {(Direction == 1 ? "Long" : "Short")} Profitable {IsProfitable}";
+		}
 	}
 	
 	#endregion
@@ -128,8 +136,8 @@ namespace NinjaTrader.NinjaScript.Strategies
 		
 			#region Constants
 			
-			private static int LONG = -1;
-			private static int SHORT = -2;
+			private static int LONG = 1;
+			private static int SHORT = 0;
 			private double BRICK_SIZE;
 			private double TREND_THRESHOLD;
 			
@@ -175,8 +183,15 @@ namespace NinjaTrader.NinjaScript.Strategies
 		
 			#region KNN
 		
+			private int numItems = 2500;
+			private int nMatches = 100;
+			private bool weightMatches = true;
+		
 			private List<TradeData> tradeDataSet;
 			private List<TradeData> openTrades;
+		
+			private double[] currentFeatures;
+			private double prediction;
 		
 			#endregion
 		
@@ -247,6 +262,9 @@ namespace NinjaTrader.NinjaScript.Strategies
 				nextContractSize.Add(BaseContracts);
 				
 				news = new List<EconomicNews>();
+				
+				tradeDataSet = new List<TradeData>();
+				openTrades = new List<TradeData>();
 			}
 			else if (State == State.DataLoaded)
 			{
@@ -287,6 +305,8 @@ namespace NinjaTrader.NinjaScript.Strategies
 				profitLoss();
 				contractManagement();
 				trade();
+				updateDataSet();
+				makePrediction();
 				info();
 			}
 		}
@@ -334,6 +354,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 							
 							else
 							{
+								ClearOutputWindow();
 								Print("Economic news up to date.");
 								
 								foreach (string line in lines)
@@ -350,7 +371,8 @@ namespace NinjaTrader.NinjaScript.Strategies
 					{
 						EconomicNewsParser parser = new EconomicNewsParser();
 				        news = await parser.GetEconomicNewsAsync();
-							
+						
+						ClearOutputWindow();
 						Print("Writing to file...");
 						using (StreamWriter sw = File.CreateText(path))
 						{
@@ -368,6 +390,146 @@ namespace NinjaTrader.NinjaScript.Strategies
 			{
 				Print(e.ToString());	
 			}
+		}
+		
+		#endregion
+		
+		#region Update Data Set
+		
+		private void updateDataSet()
+		{
+			if (State != State.Realtime)
+			{
+				return;
+			}
+			
+			if (IsFirstTickOfBar)
+			{
+				openTrades.Add(new TradeData
+				{
+					Index = CurrentBar - 1,
+					Volume = normalize(VOL()[1]),
+					TimeToFormBar = normalize((Time[1] - Time[2]).TotalSeconds),
+					BarSize = normalize(High[1] - Low[1]),
+					Price = Open[0],
+					Direction = Close[1] > Open[1] ? LONG : SHORT
+				});
+			}
+			
+			List<TradeData> toRemove = new List<TradeData>();
+			
+			foreach (var trade in openTrades)
+			{
+				if ((High[0] >= trade.Price + TakeProfit * TickSize && trade.Direction == LONG) ||
+					(Low[0] <= trade.Price - TakeProfit * TickSize && trade.Direction == SHORT))
+				{
+					trade.IsProfitable = true;
+					tradeDataSet.Add(trade);
+					toRemove.Add(trade);
+					Print(trade);
+				}
+				
+				else if ((Low[0] <= trade.Price - StopLoss * TickSize && trade.Direction == LONG) ||
+					(High[0] >= trade.Price + StopLoss * TickSize && trade.Direction == SHORT))
+				{
+					trade.IsProfitable = false;
+					tradeDataSet.Add(trade);
+					toRemove.Add(trade);
+					Print(trade);
+				}
+			}
+			
+			foreach (var trade in toRemove)
+			{
+				openTrades.Remove(trade);	
+			}
+		}
+		
+		private double normalize(double x)
+		{
+		    double divisor = 10;
+		    
+		    while (Math.Abs(x) >= divisor && divisor <= 100000)
+		    {
+		        divisor *= 10;
+		    }
+		
+		    return x / divisor;
+		}
+		
+		#endregion
+		
+		#region Prediction
+		
+		private void makePrediction()
+		{
+			if (State != State.Realtime)
+			{
+				return;
+			}
+			
+			if (tradeDataSet.Count < numItems)
+			{
+				//Print($"Training...({tradeDataSet.Count}/{numItems})");
+				return;
+			}
+			
+			currentFeatures = new double[] 
+			{ 
+				normalize(VOL()[0]), 
+				normalize((Time[0] - Time[1]).TotalSeconds), 
+				normalize(High[0] - Low[0])
+			};
+			
+			analyze(currentFeatures, nMatches);
+		}
+		
+		private void analyze(double[] features, int k)
+		{
+			int n = tradeDataSet.Count;
+			int count = 0;
+			int[] ordering = new int[n];
+			double[] distances = new double[n];
+			double[] distancesCopy = new double[n];
+			double[] kNearest = new double[k];
+			
+			for (int i = 0; i < n; i++)
+			{
+				distances[i] = getDistance(features, tradeDataSet[i]);	
+				ordering[i] = i;
+			}
+						
+		    Array.Copy(distances, distancesCopy, distances.Length);
+		    Array.Sort(distancesCopy, ordering);
+			
+			for (int i = 0; i < k; i++)
+			{
+				kNearest[i] = distances[ordering[i]];
+			}
+			
+			for (int i = 0; i < k; i++)
+			{
+				if (tradeDataSet[ordering[i]].IsProfitable)
+				{
+					count++;	
+				}
+			}
+			
+			prediction = (double)count / k;
+			
+			ClearOutputWindow();
+			Print($"Probability of profitable trade: {prediction * 100}");
+		}
+		
+		private double getDistance(double[] features, TradeData trade)
+		{
+			double sum = 0;
+			
+			sum += Math.Pow(features[0] - trade.Volume, 2);
+			sum += Math.Pow(features[1] - trade.TimeToFormBar, 2);
+			sum += Math.Pow(features[2] - trade.BarSize, 2);
+			
+			return Math.Sqrt(sum);
 		}
 		
 		#endregion
@@ -576,6 +738,9 @@ namespace NinjaTrader.NinjaScript.Strategies
 		{
 			SetProfitTarget(CalculationMode.Ticks, TakeProfit);
 			SetStopLoss(CalculationMode.Ticks, StopLoss);
+			
+//			if (prediction < 0.8)
+//				return;
 			
 			if (direction == LONG) 
 			{
